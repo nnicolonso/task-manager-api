@@ -25,14 +25,9 @@ const getTaskById = async (req, res) => {
 const createTask = async (req, res) => {
 	try {
 		const { title, description, status } = req.body;
-		if (!title) return res.status(400).json({ error: 'Title is required' });
-
-		const validStatuses = ['pending', 'in_progress', 'done'];
-		const taskStatus = validStatuses.includes(status) ? status : 'pending';
-
 		const result = await db.query(
 			'INSERT INTO tasks (title, description, status) VALUES ($1, $2, $3) RETURNING *',
-			[title, description || null, taskStatus]
+			[title, description || null, status || 'pending']
 		);
 		res.status(201).json(result.rows[0]);
 	} catch (err) {
@@ -47,7 +42,6 @@ const updateTask = async (req, res) => {
 
 		const task = existing.rows[0];
 		const { title, description, status } = req.body;
-		const validStatuses = ['pending', 'in_progress', 'done'];
 
 		const result = await db.query(
 			`UPDATE tasks SET
@@ -59,7 +53,7 @@ const updateTask = async (req, res) => {
 			[
 				title ?? task.title,
 				description !== undefined ? description : task.description,
-				validStatuses.includes(status) ? status : task.status,
+				status ?? task.status,
 				req.params.id
 			]
 		);
